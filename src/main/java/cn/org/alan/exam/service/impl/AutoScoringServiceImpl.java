@@ -66,7 +66,7 @@ public class AutoScoringServiceImpl extends ServiceImpl<ExamQuAnswerMapper, Exam
                 if (matcher.find()) {
                     scoringResult = matcher.group(1).trim();
                 } else {
-                    System.out.println("JSON内容未匹配");
+                    throw new ServiceRuntimeException("JSON内容未匹配");
                 }
 
                 // 4. 解析评分结果
