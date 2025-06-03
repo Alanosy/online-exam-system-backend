@@ -47,7 +47,7 @@
         o.content as qusetionAnswer,
         eqa.answer_content as userAnswer
         FROM t_exam_qu_answer eqa
-        JOIN t_exam_question eq ON eqa.question_id = eq.question_id
+        JOIN t_exam_question eq ON eqa.question_id = eq.question_id  AND eqa.exam_id = eq.exam_id
         JOIN t_question q ON eq.question_id = q.id AND q.is_deleted = 0
         JOIN t_option o ON o.qu_id = q.id and o.is_deleted = 0 and o.is_right = 1
         WHERE eqa.exam_id = #{examId}

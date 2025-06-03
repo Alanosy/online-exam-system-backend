@@ -1017,6 +1017,7 @@ public class ExamServiceImpl extends ServiceImpl<ExamMapper, Exam> implements IE
 
         // 如果需要阅卷，调用自动评分
         if (whetherMark == 0) {
+            autoScoringService.autoScoringExam(examId, SecurityUtil.getUserId());
             return Result.success("提交成功，待老师阅卷");
         }
 
