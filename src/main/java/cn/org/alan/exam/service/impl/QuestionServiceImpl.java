@@ -118,7 +118,13 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
         // 修改选项
         List<Option> options = questionFrom.getOptions();
         for (Option option : options) {
-            optionMapper.updateById(option);
+            if (option.getIsDeleted() != null && option.getIsDeleted() == 1) {
+                // 如果选项被标记为删除，则执行逻辑删除
+                optionMapper.deleteById(option.getId());
+            } else {
+                // 否则更新选项
+                optionMapper.updateById(option);
+            }
         }
         return Result.success("修改试题成功");
     }
