@@ -6,6 +6,7 @@ import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.JWTVerifier;
 // import jakarta.annotation.Resource;
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -84,21 +85,29 @@ public class JwtUtil {
      * 校验token并尝试续签
      *
      * @param token token令牌
+     * @param storedToken Redis中存储的token
      * @return 若不需要续签返回原 Token，若需要续签返回新 Token，若验证失败返回 null
      */
-    public String verifyAndRefreshToken(String token) {
+    public String verifyAndRefreshToken(String token, String storedToken) {
+        // 首先验证Redis中的token
+        if (StringUtils.isBlank(storedToken) || !token.equals(storedToken)) {
+            return null;
+        }
+        
         JWTVerifier verifier = getVerifier();
         try {
             DecodedJWT jwt = verifier.verify(token);
             // 检查是否需要续签
             if (shouldRefresh(jwt)) {
+                log.info("Token即将过期，开始续签。过期时间：{}，当前时间：{}", 
+                    jwt.getExpiresAt(), new Date());
                 String userInfo = jwt.getClaim("userInfo").asString();
                 List<String> authList = jwt.getClaim("authList").asList(String.class);
                 return createJwt(userInfo, authList);
             }
             return token;
         } catch (JWTVerificationException e) {
-            log.error("校验失败", e);
+            log.error("Token验证失败", e);
             return null;
         }
     }
@@ -113,6 +122,7 @@ public class JwtUtil {
         Date expirationDate = jwt.getExpiresAt();
         long currentTime = System.currentTimeMillis();
         long remainingTime = expirationDate.getTime() - currentTime;
+        log.info("Token剩余时间：{}ms，续签阈值：{}ms", remainingTime, refreshThreshold);
         return remainingTime < refreshThreshold;
     }
 

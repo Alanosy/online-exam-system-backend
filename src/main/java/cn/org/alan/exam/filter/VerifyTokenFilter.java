@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Value;
 
 /**
  * Token校验过滤器
@@ -46,6 +47,9 @@ public class VerifyTokenFilter extends OncePerRequestFilter {
     @Resource
     private ObjectMapper objectMapper;
 
+    @Value("${jwt.expiration}")
+    private long expiration;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
@@ -67,13 +71,13 @@ public class VerifyTokenFilter extends OncePerRequestFilter {
         // 从Redis中获取存储的JWT
         String sessionId = request.getSession().getId();
         String storedToken = stringRedisTemplate.opsForValue().get("token:" + sessionId);
-        if (StringUtils.isBlank(storedToken) ||!token.equals(storedToken)) {
-            filterChain.doFilter(request, response);
-            // responseUtil.response(response, Result.failed("token无效，请重新登录"), 401);
+        if (StringUtils.isBlank(storedToken) || !token.equals(storedToken)) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("token无效或已过期，请重新登录");
             return;
         }
         // 验证并尝试续签 Token
-        String refreshedToken = jwtUtil.verifyAndRefreshToken(token);
+        String refreshedToken = jwtUtil.verifyAndRefreshToken(token, storedToken);
         if (refreshedToken == null) {
             filterChain.doFilter(request, response);
             // responseUtil.response(response, Result.failed("token无效或已过期，请重新登录"), 401);
@@ -81,7 +85,7 @@ public class VerifyTokenFilter extends OncePerRequestFilter {
         }
         // 如果 Token 已续签，更新 Redis 中的 Token 并设置到响应头
         if (!refreshedToken.equals(token)) {
-            stringRedisTemplate.opsForValue().set("token" + request.getSession().getId(), refreshedToken, 30, TimeUnit.MINUTES);
+            stringRedisTemplate.opsForValue().set("token:" + request.getSession().getId(), refreshedToken, expiration, TimeUnit.MILLISECONDS);
             response.setHeader("Authorization", "Bearer " + refreshedToken);
         }
 

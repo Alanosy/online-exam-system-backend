@@ -79,6 +79,8 @@ public class AuthServiceImpl implements IAuthService {
     HttpServletRequest httpServletRequest;
     @Autowired
     private ILogService logService;
+    @Value("${jwt.expiration}")
+    private long expiration;
 
     /**
      * 登录
@@ -128,7 +130,7 @@ public class AuthServiceImpl implements IAuthService {
         // 创建token
         String token = jwtUtil.createJwt(userInfo, userPermissions.stream().map(String::valueOf).collect(java.util.stream.Collectors.toList()));
         // 把token放到redis中
-        stringRedisTemplate.opsForValue().set("token:" + request.getSession().getId(), token, 30, TimeUnit.MINUTES);
+        stringRedisTemplate.opsForValue().set("token:" + request.getSession().getId(), token, expiration, TimeUnit.MILLISECONDS);
 
         // 封装用户的身份信息，为后续的身份验证和授权操作提供必要的输入
         // 创建UsernamePasswordAuthenticationToken  参数：用户信息，密码，权限列表
