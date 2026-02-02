@@ -24,7 +24,12 @@ public class SecurityUtil {
      * @return 用户id
      */
     public static Integer getUserId() {
-        SysUserDetails user = (SysUserDetails) (SecurityContextHolder.getContext().getAuthentication().getPrincipal());
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (principal instanceof String) {
+            // 匿名用户或未登录，返回null
+            return null;
+        }
+        SysUserDetails user = (SysUserDetails) principal;
         return user.getUser().getId();
     }
 
@@ -65,7 +70,12 @@ public class SecurityUtil {
      * @return
      */
     public static Integer getGradeId() {
-        SysUserDetails user = (SysUserDetails) (SecurityContextHolder.getContext().getAuthentication().getPrincipal());
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (principal instanceof String) {
+            // 匿名用户或未登录，返回null
+            return null;
+        }
+        SysUserDetails user = (SysUserDetails) principal;
         return user.getUser().getGradeId();
     }
 

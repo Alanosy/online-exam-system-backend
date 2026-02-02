@@ -286,8 +286,14 @@ public class AuthServiceImpl implements IAuthService {
      */
     @Override
     public Result<String> sendHeartbeat(HttpServletRequest request) {
+        Integer userId = SecurityUtil.getUserId();
+        if (userId == null) {
+            // 未登录用户，返回失败
+            return Result.failed("用户未登录");
+        }
+        
         // 创建Redis键
-        String key = HEARTBEAT_KEY_PREFIX + SecurityUtil.getUserId();
+        String key = HEARTBEAT_KEY_PREFIX + userId;
         if (SecurityUtil.getRoleCode() == 1) {
             // 删除该键值并获取上一次的心跳时间
             String lastHeartbeatStr = stringRedisTemplate.opsForValue().get(key);
@@ -309,7 +315,7 @@ public class AuthServiceImpl implements IAuthService {
             LocalDate date = DateTimeUtil.getDate();
             // 实现累加逻辑，比如更新数据库中的记录
             // 获取当前用户的今天的记录
-            Integer userId = SecurityUtil.getUserId();
+            userId = SecurityUtil.getUserId();
             UserDailyLoginDuration userDailyLogin = userDailyLoginDurationMapper.getTodayRecord(userId, date);
             // 如果记录为空
             if (Objects.isNull(userDailyLogin)) {
