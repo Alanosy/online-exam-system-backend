@@ -8,7 +8,7 @@ python-dotenv==1.0.1
 # 数据库
 sqlalchemy==2.0.30
 pymysql==1.1.0
-cryptography==42.0.0
+cryptography==50.0.0
 
 # JWT（与考试系统共享密钥，HS256）
 PyJWT==2.8.0
